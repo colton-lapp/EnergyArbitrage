@@ -1,5 +1,6 @@
 # User added ignore files
 credentials.json
+openai_api_key.txt
 secret_key.txt
 .env
 
