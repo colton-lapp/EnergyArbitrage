@@ -96,33 +96,109 @@ def download_price_data(download_date, generator_name):
     
 
 
-def extract_time_series_prices( data_date, generator, return_df = False, aggregation = None):
+def extract_time_series_prices( data_date, generator, return_df = False, aggregation = None, extended = False):
 
-    if data_date == None:
-        data_date = datetime.today()
-        data_date = data_date.strftime("%Y%m%d")
+    if extended:
+        assert( type(data_date) == list)
+        assert( len(data_date) == 2)
+        prices_df = pd.read_csv(f'Data/extended_time_series/prices_{data_date[0]}_{data_date[1]}_{generator}.csv')
 
-    prices_df = pd.read_csv(f'Data/prices_{data_date}_{generator}.csv')
+    else:
+        prices_df = pd.read_csv(f'Data/prices_{data_date}_{generator}.csv')
 
     # Ensure that the prices are in order
     prices_df = prices_df.sort_values(by='time').reset_index(drop=True)
 
+    # Perform any temporal aggregations ?
+    if aggregation == 'hourly':
+        # Convert the 'timestamp' column to datetime
+        prices_df['datetime'] = pd.to_datetime(prices_df['time'])
+
+        # Set the 'timestamp' column as the index
+        prices_df.set_index('datetime', inplace=True)
+
+        # Resample the DataFrame to hourly frequency and aggregate using the mean
+        hourly_marg_prices = prices_df[['LB_MargPrice']].resample('H').mean()
+        hourly_marg_cost_loss = prices_df[['MargCostLosses']].resample('H').mean()
+        hourly_marg_cost_cong = prices_df[['MargCostCongestion']].resample('H').mean()
+        
+        #Concat
+        hourly_df = pd.concat([hourly_marg_prices, hourly_marg_cost_loss, hourly_marg_cost_cong], axis=1)
+
+        # Reset the index to include the timestamp as a column
+        hourly_df = hourly_df.reset_index()
+        hourly_df.rename(columns={'datetime': 'time'}, inplace=True)
+        prices_df = hourly_df
+
     if return_df:
         return prices_df
-        
+
     # Extract the prices
     times = prices_df['time'].values
     prices = prices_df['LB_MargPrice'].values
     marg_cost_loss = prices_df['MargCostLosses'].values
     marg_cost_cong = prices_df['MargCostCongestion'].values
 
-    # Perform any temporal aggregations ?
-    if aggregation is not None:
-        pass
-
     return { 'times': times
             , 'prices': prices
             , 'marg_cost_loss': marg_cost_loss
             , 'marg_cost_cong': marg_cost_cong 
             }
+
+
+def create_extended_time_series( start_date, end_date, generator_name, aggregation = None):
+
+    # Check if already done:
+    if os.path.exists(f'Data/extended_time_series/prices_{start_date}_{end_date}_{generator_name}.csv'):
+        print(f'Extended time series already created for dates:\
+            {start_date} to {end_date}, Generator: {generator_name}')   
+        # Read in and return df
+        return pd.read_csv(f'Data/extended_time_series/prices_{start_date}_{end_date}_{generator_name}.csv')
+
+    # create list of dates between start_date and end_date inclusive
+    date_list = pd.date_range(start=start_date, end=end_date).tolist()
+
+    full_df = None
+
+    for date in date_list:
+        print("Fetching price data for date: ", date)
+
+        date_formatted = date.strftime("%Y%m%d")
+
+        # Try to read it in from data dir
+        if os.path.exists(f'Data/prices_{date_formatted}_{generator_name}.csv'):
+            price_df = pd.read_csv(f'Data/prices_{date_formatted}_{generator_name}.csv')
+
+            # Concat it to full_df
+            if full_df is None:
+                full_df = price_df
+            else:
+                full_df = pd.concat([full_df, price_df], axis=0)
+        
+        # Try to read it in from downloads 
+        if os.path.exists(f'Data/downloads/{date_formatted}realtime_gen.csv'):
+            price_df = pd.read_csv(f'Data/downloads/{date_formatted}realtime_gen.csv')
+
+            price_df = price_df[price_df['Name'] == generator_name][['Time Stamp'
+                                                                , 'LBMP ($/MWHr)'
+                                                                , 'Marginal Cost Losses ($/MWHr)'
+                                                                , 'Marginal Cost Congestion ($/MWHr)']].reset_index(drop=True)
+            
+            price_df = price_df.rename(columns={ 'Time Stamp': 'time'
+                                                , 'LBMP ($/MWHr)': 'LB_MargPrice'
+                                                , 'Marginal Cost Losses ($/MWHr)': 'MargCostLosses'
+                                                , 'Marginal Cost Congestion ($/MWHr)': 'MargCostCongestion'}
+                                        )
+            price_df.to_csv(f'Data/prices_{date_formatted}_{generator_name}.csv', index=False)
+
+            # Concat it to full_df
+            if full_df is None:
+                full_df = price_df
+            else:
+                full_df = pd.concat([full_df, price_df], axis=0)
+
+    # Save extended time series
+    full_df.to_csv(f'Data/extended_time_series/prices_{start_date}_{end_date}_{generator_name}.csv', index=False)
+    return full_df
+
 
