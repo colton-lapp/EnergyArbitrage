@@ -5,6 +5,7 @@ secret_key.txt
 .env
 
 credentials/
+Data/
 .vscode/
 .idea/
 
