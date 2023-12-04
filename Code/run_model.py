@@ -44,7 +44,7 @@ def create_model(parameters, batteries_counts=None, warehouses_used=None): # num
     # plot_price_time_series(date_range, generator_name)
 
     # Extract time series of prices in a list for Gurobi
-    prices_dict = extract_time_series_prices(date_range, generator_name)
+    prices_dict = extract_time_series_prices(date_range, generator_name, aggregation='hourly')
     price_times = prices_dict['times']
     prices = prices_dict['prices']
 
