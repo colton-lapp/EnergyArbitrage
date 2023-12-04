@@ -31,6 +31,9 @@ def create_model(parameters, batteries_counts=None, warehouses_used=None): # num
     battery_types_used = parameters['battery_types_used']
     warehouse_data = parameters['warehouse_data']
 
+    # Container to fill with prices and dates to pass out of the function
+    constraint_params = {}
+
     # placeholder
     if date_range is None:
         start_date = datetime.today()
@@ -44,13 +47,15 @@ def create_model(parameters, batteries_counts=None, warehouses_used=None): # num
     # plot_price_time_series(date_range, generator_name)
 
     # Extract time series of prices in a list for Gurobi
-    prices_dict = extract_time_series_prices(date_range, generator_name, aggregation='hourly')
+    prices_dict = extract_time_series_prices(date_range, generator_name, aggregation=None)
     price_times = prices_dict['times']
+
     prices = prices_dict['prices']
 
     model = gp.Model(name)
 
     num_periods = len(prices)
+    parameters['num_periods'] = num_periods
 
     periods = range(num_periods)
     markets = range(num_markets)
@@ -115,7 +120,10 @@ def create_model(parameters, batteries_counts=None, warehouses_used=None): # num
     )
     # OPTIGUIDE CONSTRAINT CODE GOES HERE
 
-    return [model, decision_var_dict]
+    constraint_params['price_times'] = price_times
+    constraint_params['prices'] = prices_dict['prices']
+
+    return [model, decision_var_dict, constraint_params]
 
 
 # Run the model
@@ -123,32 +131,49 @@ def run(parameters, print_results=False):
     battery_types_used = parameters['battery_types_used']
 
     # Create model
-    [model, decision_var_dict] = create_model(parameters)
+    [model, decision_var_dict, constraint_params] = create_model(parameters)
 
     # Run model
     model.optimize()
 
-    if print_results:
-        num_periods = parameters['num_periods']
-        num_markets = parameters['num_markets']
+    if model.status == GRB.OPTIMAL:
 
-        if model.status == GRB.OPTIMAL:
+        # Unpack results
+        model_results = {} 
+
+        model_results['num_periods'] = parameters['num_periods']
+        model_results['num_markets'] = parameters['num_markets']   
+        model_results['buy_ts'] = { battery_type: [] for battery_type in battery_types_used }  
+        model_results['sell_ts'] = { battery_type: [] for battery_type in battery_types_used } 
+        model_results['time'] = list( range( parameters['num_periods'] ) )
+        model_results['total_profit'] = model.objVal
+
+
+        if print_results:
             print("\nOptimal Solution:")
 
-            for p in range(num_periods):
+        for p in range( model_results['num_periods'] ):
+            if print_results:    
                 print(f"\nPeriod {p + 1}:")
 
-                for battery_type in battery_types_used:
-                    buy = decision_var_dict[f'{battery_type}-buy']
-                    sell = decision_var_dict[f'{battery_type}-sell']
+            for battery_type in battery_types_used:
+                buy = decision_var_dict[f'{battery_type}-buy']
+                sell = decision_var_dict[f'{battery_type}-sell']
 
+                if print_results:
                     print(f"\nFor Battery Type: {battery_type}:")
-                    for i in range(num_markets):
+                    
+                for i in range(model_results['num_markets']):
+                    if print_results:
                         print(f"Buy from Market {i + 1}: {buy[p, i].x}")
                         print(f"Sell to Market {i + 1}: {sell[p, i].x}")
+                    model_results['buy_ts'][battery_type].append( buy[p, i].x )
+                    model_results['sell_ts'][battery_type].append( sell[p, i].x )
 
-            print(f"\nTotal Profit: {model.objVal}")
-        else:
-            print("No solution found")
+            if print_results:
+                print(f"\nTotal Profit: {model.objVal}")
+    else:
+        model_results = None
+        print("No solution found")
 
-    return [model, decision_var_dict]
+    return [model, decision_var_dict, model_results, constraint_params]

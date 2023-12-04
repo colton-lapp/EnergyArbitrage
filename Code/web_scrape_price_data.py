@@ -36,7 +36,7 @@ def get_preceding_30_days(input_date):
     return date_list
 
 def download_price_data(date_range, generator_name):
-    original_date_range = date_range
+
     print("\n\nDownloading price data...\n", '-'*70, sep='')
 
     if date_range == None:
@@ -45,13 +45,15 @@ def download_price_data(date_range, generator_name):
 
         date_range = [download_date]
 
-    # Remove any dates where the file already exists
+    # Create list of dates to download
+    dates_to_download = []
     for date in date_range:
         if os.path.exists(f'Data/{date}_{generator_name}.csv'):
             print(f'...Price data already downloaded for date: {date}, Generator: {generator_name}')
-            date_range.remove(date)
+        else:
+            dates_to_download.append( date ) 
 
-    if len(date_range) != 0:
+    if len(dates_to_download) != 0:
         driver_path = ChromeDriverManager().install()
 
         home_dir = os.path.expanduser("~")
@@ -79,7 +81,7 @@ def download_price_data(date_range, generator_name):
         if not os.path.exists(download_directory):
             os.makedirs(download_directory)
 
-        for date in date_range:
+        for date in dates_to_download:
             found = False
             i = 0
 
@@ -87,7 +89,7 @@ def download_price_data(date_range, generator_name):
                 print(f'...Price data already downloaded for date: {date}')
                 found = True
 
-            while not found and i < len(all_links):
+            while  (not found) and (i < len(all_links)) :
                 link = all_links[i]
                 href = link.get_attribute('href')
 
@@ -106,24 +108,30 @@ def download_price_data(date_range, generator_name):
                 # Check if the request was successful (status code 200)
                 if response.status_code == 200:
                     # Save the zip file to the destination folder
-                    with open(os.path.join(download_directory, "month.zip"), "wb") as zip_file:
+
+                    #with open(os.path.join(download_directory, "month.zip"), "wb") as zip_file:
+                    with open(os.path.join(storage_directory, "month.zip"), "wb") as zip_file:
                         zip_file.write(response.content)
 
                     # Extract the downloaded zip file
-                    with zipfile.ZipFile(os.path.join(download_directory, "month.zip"), 'r') as zip_ref:
-                        zip_ref.extractall(download_directory)
+                    #with zipfile.ZipFile(os.path.join(download_directory, "month.zip"), 'r') as zip_ref:
+                    with zipfile.ZipFile(os.path.join(storage_directory, "month.zip"), 'r') as zip_ref:
+                       #zip_ref.extractall(download_directory)
+                        zip_ref.extractall(storage_directory)
 
                     # Remove the downloaded zip file
-                    os.remove(os.path.join(download_directory, "month.zip"))
+                    #os.remove(os.path.join(download_directory, "month.zip"))
+                    os.remove(os.path.join(storage_directory, "month.zip"))
                 else:
                     print("Failed to download the zip file")
 
         # csv_files = [file for file in os.listdir(storage_directory) if file.endswith('.csv')]
 
-        date_range = original_date_range
+        driver.quit()
+    
+        for date in date_range: 
 
-        for d_date in date_range:
-            file_path = f'{storage_directory}/{d_date}_{generator_name}.csv'
+            file_path = f'{storage_directory}/{date}_{generator_name}.csv'
 
             if not os.path.exists(file_path):
                 price_df = pd.read_csv(f'{storage_directory}/{date}damlbmp_gen.csv')
@@ -132,10 +140,8 @@ def download_price_data(date_range, generator_name):
                 price_df = price_df.rename(columns=new_columns)
 
                 # Save dfs in data dir
-                print(f'Saving price data for date: {d_date}, Generator: {generator_name}')
-                price_df.to_csv(f'{storage_directory}/{d_date}_{generator_name}.csv', index=False)
-
-        driver.quit()
+                print(f'Saving price data for date: {date}, Generator: {generator_name}')
+                price_df.to_csv(f'{storage_directory}/{date}_{generator_name}.csv', index=False)
 
     print("\n -- Price data downloaded successfully! -- \n\n")
 
