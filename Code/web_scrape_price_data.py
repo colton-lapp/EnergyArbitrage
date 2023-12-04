@@ -1,42 +1,62 @@
 import os
 import re
+import sys
 import time
+import zipfile
+import requests
 import numpy as np
 import pandas as pd
 import gurobipy as gp
-import sys
-from datetime import datetime
 from selenium import webdriver
+from datetime import datetime, timedelta
 from webdriver_manager.chrome import ChromeDriverManager
 
+columns = ['Time Stamp', 'LBMP ($/MWHr)', 'Marginal Cost Losses ($/MWHr)', 'Marginal Cost Congestion ($/MWHr)']
+new_columns = {
+    'Time Stamp': 'time',
+    'LBMP ($/MWHr)': 'LB_MargPrice',
+    'Marginal Cost Losses ($/MWHr)': 'MargCostLosses',
+    'Marginal Cost Congestion ($/MWHr)': 'MargCostCongestion'
+}
 
 def extract_date(file_path):
     match = re.match(r'^(\d+)', file_path.split('/')[4])
 
     return match.group(1)
 
-def download_price_data(download_date, generator_name):
+def get_preceding_30_days(input_date):
+    date_list = []
 
+    # Generate dates for that day and the preceding 30 days
+    for i in range(31):
+        # Subtract a day from the date in each iteration
+        prev_date = input_date - timedelta(days=i)
+        date_list.append(prev_date.strftime("%Y%m%d"))
+
+    return date_list
+
+def download_price_data(date_range, generator_name):
     print("\n\nDownloading price data...\n", '-'*70, sep='')
 
-    if download_date == None:
+    if date_range == None:
         download_date = datetime.today()
         download_date = download_date.strftime("%Y%m%d")
 
-    dates = [download_date]
+        date_range = [download_date]
 
     # Remove any dates where the file already exists
-    for date in dates:
-        if os.path.exists(f'Data/prices_{date}_{generator_name}.csv'):
+    for date in date_range:
+        if os.path.exists(f'Data/{date}_{generator_name}.csv'):
             print(f'...Price data already downloaded for date: {date}, Generator: {generator_name}')
-            dates.remove(date)
+            date_range.remove(date)
 
-    if len(dates) != 0:
+    if len(date_range) != 0:
         driver_path = ChromeDriverManager().install()
 
         home_dir = os.path.expanduser("~")
 
         download_directory = os.path.join(home_dir, 'Downloads_CSV')
+        storage_directory = 'Data'
         chrome_options = webdriver.ChromeOptions()
         prefs = {'download.default_directory': download_directory}
         chrome_options.add_experimental_option('prefs', prefs)
@@ -52,59 +72,85 @@ def download_price_data(download_date, generator_name):
             except:
                 sys.exit("Please install correct version of selenium")
 
-        driver.get('http://mis.nyiso.com/public/P-24Blist.htm')
+        driver.get('http://mis.nyiso.com/public/P-2Blist.htm')
         all_links = driver.find_elements("xpath", "//a[@href]")
 
         if not os.path.exists(download_directory):
             os.makedirs(download_directory)
 
-        for date in dates:
-            for link in all_links:
+        for date in date_range:
+            found = False
+            i = 0
+
+            if os.path.exists(f'Data/{date}damlbmp_gen.csv'):
+                print(f'...Price data already downloaded for date: {date}')
+                found = True
+
+            while not found and i < len(all_links):
+                link = all_links[i]
                 href = link.get_attribute('href')
 
-                if ('csv' in href) and (date in href):
+                if ('csv' in href) and (date in href) and ('zip' not in href) and ('realtime' not in href):
                     link.click()
                     time.sleep(2)
-                    break
+                    found = True
 
-        csv_files = [file for file in os.listdir(download_directory) if file.endswith('.csv')]
+                i += 1
 
-        for file_name in csv_files:
-            file_path = os.path.join(download_directory, file_name)
-            d_date = extract_date(file_path)
-            price_df = pd.read_csv(file_path)
+            if not found:
+                year_month = date[0:6]
+                zip_url = f'http://mis.nyiso.com/public/csv/damlbmp/{year_month}01damlbmp_gen_csv.zip'
+                response = requests.get(zip_url, timeout=10)
 
-            price_df = price_df[price_df['Name'] == generator_name][['Time Stamp'
-                                                                , 'LBMP ($/MWHr)'
-                                                                , 'Marginal Cost Losses ($/MWHr)'
-                                                                , 'Marginal Cost Congestion ($/MWHr)']].reset_index(drop=True)
-            
-            price_df = price_df.rename(columns={ 'Time Stamp': 'time'
-                                                , 'LBMP ($/MWHr)': 'LB_MargPrice'
-                                                , 'Marginal Cost Losses ($/MWHr)': 'MargCostLosses'
-                                                , 'Marginal Cost Congestion ($/MWHr)': 'MargCostCongestion'}
-                                        )
+                # Check if the request was successful (status code 200)
+                if response.status_code == 200:
+                    # Save the zip file to the destination folder
+                    with open(os.path.join(download_directory, "month.zip"), "wb") as zip_file:
+                        zip_file.write(response.content)
 
-            # Save dfs in data dir
-            print(f'Saving price data for date: {d_date}, Generator: {generator_name}')
-            price_df.to_csv(f'Data/prices_{date}_{generator_name}.csv', index=False)
+                    # Extract the downloaded zip file
+                    with zipfile.ZipFile(os.path.join(download_directory, "month.zip"), 'r') as zip_ref:
+                        zip_ref.extractall(download_directory)
+
+                    # Remove the downloaded zip file
+                    os.remove(os.path.join(download_directory, "month.zip"))
+                else:
+                    print("Failed to download the zip file")
+
+        # csv_files = [file for file in os.listdir(storage_directory) if file.endswith('.csv')]
+
+        for d_date in date_range:
+            file_path = f'{storage_directory}/{d_date}_{generator_name}.csv'
+
+            if not os.path.exists(file_path):
+                price_df = pd.read_csv(f'{storage_directory}/{date}damlbmp_gen.csv')
+
+                price_df = price_df[price_df['Name'] == generator_name][columns].reset_index(drop=True)
+                price_df = price_df.rename(columns=new_columns)
+
+                # Save dfs in data dir
+                print(f'Saving price data for date: {d_date}, Generator: {generator_name}')
+                price_df.to_csv(f'{storage_directory}/{d_date}_{generator_name}.csv', index=False)
 
         driver.quit()
-    
+
     print("\n -- Price data downloaded successfully! -- \n\n")
 
-    
 
+def extract_time_series_prices(date_range, generator, return_df=False, aggregation=None, extended=False):
+    result = None
 
-def extract_time_series_prices( data_date, generator, return_df = False, aggregation = None, extended = False):
+    dfs = []
 
-    if extended:
-        assert( type(data_date) == list)
-        assert( len(data_date) == 2)
-        prices_df = pd.read_csv(f'Data/extended_time_series/prices_{data_date[0]}_{data_date[1]}_{generator}.csv')
+    for date in date_range:
+        if extended:
+            prices_df = pd.read_csv(f'Data/extended_time_series/{date[0]}_{date[1]}_{generator}.csv')
+        else:
+            prices_df = pd.read_csv(f'Data/{date}_{generator}.csv')
 
-    else:
-        prices_df = pd.read_csv(f'Data/prices_{data_date}_{generator}.csv')
+        dfs.append(prices_df)
+
+    prices_df = pd.concat(dfs)
 
     # Ensure that the prices are in order
     prices_df = prices_df.sort_values(by='time').reset_index(drop=True)
@@ -121,7 +167,7 @@ def extract_time_series_prices( data_date, generator, return_df = False, aggrega
         hourly_marg_prices = prices_df[['LB_MargPrice']].resample('H').mean()
         hourly_marg_cost_loss = prices_df[['MargCostLosses']].resample('H').mean()
         hourly_marg_cost_cong = prices_df[['MargCostCongestion']].resample('H').mean()
-        
+
         #Concat
         hourly_df = pd.concat([hourly_marg_prices, hourly_marg_cost_loss, hourly_marg_cost_cong], axis=1)
 
@@ -131,74 +177,71 @@ def extract_time_series_prices( data_date, generator, return_df = False, aggrega
         prices_df = hourly_df
 
     if return_df:
-        return prices_df
+        result = prices_df
+    else:
+        # Extract the prices
+        times = prices_df['time'].values
+        prices = prices_df['LB_MargPrice'].values
+        marg_cost_loss = prices_df['MargCostLosses'].values
+        marg_cost_cong = prices_df['MargCostCongestion'].values
 
-    # Extract the prices
-    times = prices_df['time'].values
-    prices = prices_df['LB_MargPrice'].values
-    marg_cost_loss = prices_df['MargCostLosses'].values
-    marg_cost_cong = prices_df['MargCostCongestion'].values
+        result = {
+            'times': times,
+            'prices': prices,
+            'marg_cost_loss': marg_cost_loss,
+            'marg_cost_cong': marg_cost_cong
+        }
 
-    return { 'times': times
-            , 'prices': prices
-            , 'marg_cost_loss': marg_cost_loss
-            , 'marg_cost_cong': marg_cost_cong 
-            }
+    return result
 
 
-def create_extended_time_series( start_date, end_date, generator_name, aggregation = None):
+def create_extended_time_series(start_date, end_date, generator_name, aggregation = None):
+    result = None
 
     # Check if already done:
-    if os.path.exists(f'Data/extended_time_series/prices_{start_date}_{end_date}_{generator_name}.csv'):
+    if os.path.exists(f'Data/extended_time_series/{start_date}_{end_date}_{generator_name}.csv'):
         print(f'Extended time series already created for dates:\
-            {start_date} to {end_date}, Generator: {generator_name}')   
+            {start_date} to {end_date}, Generator: {generator_name}')
         # Read in and return df
-        return pd.read_csv(f'Data/extended_time_series/prices_{start_date}_{end_date}_{generator_name}.csv')
+        result = pd.read_csv(f'Data/extended_time_series/{start_date}_{end_date}_{generator_name}.csv')
+    else:
+        # create list of dates between start_date and end_date inclusive
+        date_list = pd.date_range(start=start_date, end=end_date).tolist()
 
-    # create list of dates between start_date and end_date inclusive
-    date_list = pd.date_range(start=start_date, end=end_date).tolist()
+        full_df = None
 
-    full_df = None
+        for date in date_list:
+            print("Fetching price data for date: ", date)
+            date_formatted = date.strftime("%Y%m%d")
 
-    for date in date_list:
-        print("Fetching price data for date: ", date)
+            # Try to read it in from data dir
+            if os.path.exists(f'Data/{date_formatted}_{generator_name}.csv'):
+                price_df = pd.read_csv(f'Data/{date_formatted}_{generator_name}.csv')
 
-        date_formatted = date.strftime("%Y%m%d")
+                # Concat it to full_df
+                if full_df is None:
+                    full_df = price_df
+                else:
+                    full_df = pd.concat([full_df, price_df], axis=0)
 
-        # Try to read it in from data dir
-        if os.path.exists(f'Data/prices_{date_formatted}_{generator_name}.csv'):
-            price_df = pd.read_csv(f'Data/prices_{date_formatted}_{generator_name}.csv')
+            # Try to read it in from downloads
+            if os.path.exists(f'Data/downloads/{date_formatted}realtime_gen.csv'):
+                price_df = pd.read_csv(f'Data/downloads/{date_formatted}realtime_gen.csv')
+                price_df = price_df[price_df['Name'] == generator_name][columns].reset_index(drop=True)
 
-            # Concat it to full_df
-            if full_df is None:
-                full_df = price_df
-            else:
-                full_df = pd.concat([full_df, price_df], axis=0)
-        
-        # Try to read it in from downloads 
-        if os.path.exists(f'Data/downloads/{date_formatted}realtime_gen.csv'):
-            price_df = pd.read_csv(f'Data/downloads/{date_formatted}realtime_gen.csv')
+                price_df = price_df.rename(columns=new_columns)
 
-            price_df = price_df[price_df['Name'] == generator_name][['Time Stamp'
-                                                                , 'LBMP ($/MWHr)'
-                                                                , 'Marginal Cost Losses ($/MWHr)'
-                                                                , 'Marginal Cost Congestion ($/MWHr)']].reset_index(drop=True)
-            
-            price_df = price_df.rename(columns={ 'Time Stamp': 'time'
-                                                , 'LBMP ($/MWHr)': 'LB_MargPrice'
-                                                , 'Marginal Cost Losses ($/MWHr)': 'MargCostLosses'
-                                                , 'Marginal Cost Congestion ($/MWHr)': 'MargCostCongestion'}
-                                        )
-            price_df.to_csv(f'Data/prices_{date_formatted}_{generator_name}.csv', index=False)
+                price_df.to_csv(f'Data/{date_formatted}_{generator_name}.csv', index=False)
 
-            # Concat it to full_df
-            if full_df is None:
-                full_df = price_df
-            else:
-                full_df = pd.concat([full_df, price_df], axis=0)
+                # Concat it to full_df
+                if full_df is None:
+                    full_df = price_df
+                else:
+                    full_df = pd.concat([full_df, price_df], axis=0)
 
-    # Save extended time series
-    full_df.to_csv(f'Data/extended_time_series/prices_{start_date}_{end_date}_{generator_name}.csv', index=False)
-    return full_df
+        # Save extended time series
+        result = full_df.to_csv(f'Data/extended_time_series/{start_date}_{end_date}_{generator_name}.csv', index=False)
+
+    return result
 
 
