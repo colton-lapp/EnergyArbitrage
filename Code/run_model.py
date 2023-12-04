@@ -21,7 +21,6 @@ def create_model(parameters, batteries_counts=None, warehouses_used=None): # num
     name = parameters['name']
     generator_name = parameters['generator_name']
     date_range = parameters['date_range']
-    num_periods = parameters['num_periods']
     num_markets = parameters['num_markets']
     # num_batteries = parameters['num_batteries']
     # battery_capacity = parameters['battery_capacity']
@@ -31,17 +30,6 @@ def create_model(parameters, batteries_counts=None, warehouses_used=None): # num
     battery_types = parameters['battery_types']
     battery_types_used = parameters['battery_types_used']
     warehouse_data = parameters['warehouse_data']
-
-    model = gp.Model(name)
-
-    periods = range(num_periods)
-    markets = range(num_markets)
-
-    decision_var_dict = {}
-
-    for battery_type in battery_types_used:
-        for key in [f'{battery_type}-buy', f'{battery_type}-sell']:
-            decision_var_dict[key] = model.addVars(num_periods, num_markets, vtype=GRB.CONTINUOUS, name=key, lb=0)
 
     # placeholder
     if date_range is None:
@@ -60,11 +48,25 @@ def create_model(parameters, batteries_counts=None, warehouses_used=None): # num
     price_times = prices_dict['times']
     prices = prices_dict['prices']
 
+    model = gp.Model(name)
+
+    num_periods = len(prices)
+
+    periods = range(num_periods)
+    markets = range(num_markets)
+
+    decision_var_dict = {}
+
+    for battery_type in battery_types_used:
+        for key in [f'{battery_type}-buy', f'{battery_type}-sell']:
+            decision_var_dict[key] = model.addVars(num_periods, num_markets, vtype=GRB.CONTINUOUS, name=key, lb=0)
+
     objs = []
     total_area_needed = 0
 
     for battery_type in battery_types_used:
         battery = battery_types[battery_type]
+
         buy = decision_var_dict[f'{battery_type}-buy']
         sell = decision_var_dict[f'{battery_type}-sell']
         capacity = battery['capacity']
@@ -88,7 +90,7 @@ def create_model(parameters, batteries_counts=None, warehouses_used=None): # num
 
             for i in markets:
                 model.addConstr(current_level <= capacity * num_batteries, f'CapacityConstraint_period_{p+1}')
-                model.addConstr(sell[p, i] <= current_level, f'SupplyConstraint_period_{p+1}')
+                model.addConstr(current_level >= 0, f'SupplyConstraint_period_{p+1}')
                 model.addConstr(buy[p, i] * charge_loss <= max_charge, f'ChargeConstraint_period_{p+1}')
                 model.addConstr(sell[p, i] <= max_discharge, f'DischargeConstraint_period_{p+1}')
 
@@ -99,7 +101,7 @@ def create_model(parameters, batteries_counts=None, warehouses_used=None): # num
     model.update()
 
     model.addConstr(
-        gp.quicksum(warehouse_data[i]['area'] * warehouses_used[i] for i, warehouse in enumerate(warehouse_data)) >= total_area_needed,
+        total_area_needed <= gp.quicksum(warehouse_data[i]['area'] * warehouses_used[i] for i, warehouse in enumerate(warehouse_data)),
         name="Area_constraint"
     )
 

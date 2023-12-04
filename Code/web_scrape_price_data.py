@@ -36,6 +36,7 @@ def get_preceding_30_days(input_date):
     return date_list
 
 def download_price_data(date_range, generator_name):
+    original_date_range = date_range
     print("\n\nDownloading price data...\n", '-'*70, sep='')
 
     if date_range == None:
@@ -118,6 +119,8 @@ def download_price_data(date_range, generator_name):
                     print("Failed to download the zip file")
 
         # csv_files = [file for file in os.listdir(storage_directory) if file.endswith('.csv')]
+
+        date_range = original_date_range
 
         for d_date in date_range:
             file_path = f'{storage_directory}/{d_date}_{generator_name}.csv'

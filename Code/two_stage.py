@@ -33,11 +33,11 @@ parameters = {
     },
     'battery_types_used': ['lithium', 'lead', 'palladium'],
     'warehouse_data': [
-        {'area': 100, 'cost': 1.0},
-        {'area': 100, 'cost': 1.2},
-        {'area': 100, 'cost': 1.5},
-        {'area': 100, 'cost': 2.0},
-        {'area': 100, 'cost': 5.0}
+        {'area': 100, 'cost': 10},
+        {'area': 100, 'cost': 12},
+        {'area': 100, 'cost': 15},
+        {'area': 100, 'cost': 20},
+        {'area': 100, 'cost': 50}
     ]
 }
 
