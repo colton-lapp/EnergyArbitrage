@@ -1,6 +1,8 @@
 from run_model import run
 from web_scrape_price_data import get_preceding_30_days
 from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
+from matplotlib.dates import DateFormatter
 
 parameters = {
     'name': 'ElectricityArbitrage',
@@ -56,7 +58,7 @@ print(decision_var_dict['warehouses_used'])
 constraint_params['dates']  = [datetime.strptime(date, '%m/%d/%Y %H:%M') for date in constraint_params['price_times']]
 
 # ---- PLOT TIME SERIES ON ONE GRAPH ---- #
-import matplotlib.pyplot as plt
+
 
 """ # Plotting both buy_ts and sell_ts on the same graph
 plt.figure(figsize=(10, 6))
@@ -117,9 +119,8 @@ ax3.legend()
 
 date_format = DateFormatter("%m-%d")
 for ax in [ax1, ax2, ax3]:
-    ax.xaxis_date()  # Treat x-axis as dates
     ax.xaxis.set_major_formatter(date_format)
-
+    ax.xaxis_date()  # Treat x-axis as dates
 
 # Adjust layout
 plt.tight_layout()
