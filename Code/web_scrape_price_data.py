@@ -143,7 +143,6 @@ def download_price_data(date_range, generator_name):
         driver.quit()
 
         for date in date_range:
-
             file_path = f'{storage_directory}/{date}_{generator_name}.csv'
 
             if not os.path.exists(file_path):

@@ -27,6 +27,7 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
     battery_counts = parameters['battery_counts']
     warehouse_data = parameters['warehouse_data']
     warehouses_used = parameters['warehouses_used']
+    carry_over = parameters['carry_over']
 
     # Container to fill with prices and dates to pass out of the function
     constraint_params = {}
@@ -48,6 +49,8 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
     price_times = prices_dict['times']
 
     prices = prices_dict['prices']
+
+    print(prices[3] == prices[4])
 
     model = gp.Model(name)
 
@@ -79,18 +82,24 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
         max_charge = battery['max_charge']
         max_discharge = battery['max_discharge']
         size = battery['size']
+        cost = battery['cost']
 
         if battery_counts is None:
-            num_batteries = model.addVar(vtype=GRB.INTEGER, name=f'Number of {battery_type} batteries', lb=0)
-            decision_var_dict['battery_counts'][battery_type] = num_batteries
+            battery_count = model.addVar(vtype=GRB.INTEGER, name=f'Number of {battery_type} batteries', lb=0)
+            decision_var_dict['battery_counts'][battery_type] = battery_count
+
+            objs.append(cost * battery_count * -1)
         else:
-            num_batteries = battery_counts[battery_type]
+            battery_count = battery_counts[battery_type]
 
         for p in range(num_periods):
             current_level = gp.quicksum(charge_loss * buy[p_] - sell[p_] for p_ in range(p + 1)) # for i in markets
 
+            if not carry_over and p % 24 == 0:
+                model.addConstr(current_level <= 0, 'CarryOverConstraint')
+
             # for i in markets:
-            model.addConstr(current_level <= capacity * num_batteries, f'CapacityConstraint_period_{p+1}')
+            model.addConstr(current_level <= capacity * battery_count, f'CapacityConstraint_period_{p+1}')
             model.addConstr(current_level >= 0, f'SupplyConstraint_period_{p+1}')
             model.addConstr(buy[p] * charge_loss <= max_charge, f'ChargeConstraint_period_{p+1}')
             model.addConstr(sell[p] <= max_discharge, f'DischargeConstraint_period_{p+1}')
@@ -99,7 +108,7 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
 
         objs = objs + [prices[p] * sell[p] - prices[p] * buy[p] for p in periods] #  for i in markets
 
-        total_area_needed += num_batteries * size
+        total_area_needed += battery_count * size
 
     if warehouses_used is None:
         warehouses_used = model.addVars(len(warehouse_data), vtype=GRB.BINARY, name=f'Number of warehouses')
