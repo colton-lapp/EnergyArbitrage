@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import time
+import shutil
 import zipfile
 import requests
 import numpy as np
@@ -24,6 +25,11 @@ def extract_date(file_path):
 
     return match.group(1)
 
+def extract_name(file_path):
+    parts = file_path.split('/')
+
+    return parts[6]
+
 def get_preceding_30_days(input_date):
     date_list = []
 
@@ -36,7 +42,6 @@ def get_preceding_30_days(input_date):
     return date_list
 
 def download_price_data(date_range, generator_name):
-
     print("\n\nDownloading price data...\n", '-'*70, sep='')
 
     if date_range == None:
@@ -51,7 +56,7 @@ def download_price_data(date_range, generator_name):
         if os.path.exists(f'Data/{date}_{generator_name}.csv'):
             print(f'...Price data already downloaded for date: {date}, Generator: {generator_name}')
         else:
-            dates_to_download.append( date ) 
+            dates_to_download.append(date)
 
     if len(dates_to_download) != 0:
         driver_path = ChromeDriverManager().install()
@@ -61,7 +66,7 @@ def download_price_data(date_range, generator_name):
         download_directory = os.path.join(home_dir, 'Downloads_CSV')
         storage_directory = 'Data'
         chrome_options = webdriver.ChromeOptions()
-        prefs = {'download.default_directory': download_directory}
+        prefs = {'download.default_directory': storage_directory}
         chrome_options.add_experimental_option('prefs', prefs)
 
         # Initialize the driver, use try except blocks depending on version of selenium installed
@@ -78,8 +83,8 @@ def download_price_data(date_range, generator_name):
         driver.get('http://mis.nyiso.com/public/P-2Blist.htm')
         all_links = driver.find_elements("xpath", "//a[@href]")
 
-        if not os.path.exists(download_directory):
-            os.makedirs(download_directory)
+        if not os.path.exists(storage_directory):
+            os.makedirs(storage_directory)
 
         for date in dates_to_download:
             found = False
@@ -89,13 +94,21 @@ def download_price_data(date_range, generator_name):
                 print(f'...Price data already downloaded for date: {date}')
                 found = True
 
-            while  (not found) and (i < len(all_links)) :
+            while (not found) and (i < len(all_links)):
                 link = all_links[i]
                 href = link.get_attribute('href')
 
                 if ('csv' in href) and (date in href) and ('zip' not in href) and ('realtime' not in href):
                     link.click()
                     time.sleep(2)
+
+                    file_name = extract_name(href)
+
+                    source_path = f'{download_directory}/{file_name}'
+                    destination_path = f'{storage_directory}/{file_name}'
+
+                    # Move the file using shutil.move()
+                    shutil.move(source_path, destination_path)
                     found = True
 
                 i += 1
