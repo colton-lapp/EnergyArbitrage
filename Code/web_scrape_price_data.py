@@ -34,7 +34,7 @@ def get_preceding_30_days(input_date):
     date_list = []
 
     # Generate dates for that day and the preceding 30 days
-    for i in range(31):
+    for i in range(31, 0, -1):
         # Subtract a day from the date in each iteration
         prev_date = input_date - timedelta(days=i)
         date_list.append(prev_date.strftime("%Y%m%d"))

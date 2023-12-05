@@ -46,7 +46,7 @@ parameters = {
 }
 
 # Get warehouse and battery numbers
-start_date = datetime.today() - timedelta(days=1)
+start_date = datetime.today() - timedelta(days=31)
 date_range = get_preceding_30_days(start_date)
 
 parameters['date_range'] = date_range
@@ -59,7 +59,17 @@ parameters['battery_counts'] = decision_var_dict['battery_counts']
 parameters['warehouses_used'] = 'set'
 parameters['date_range'] = [start_date.strftime("%Y%m%d")]
 
-run(parameters, print_results=True)
+daily_profits = []
+start_date = datetime.today() - timedelta(days=1)
+
+for start_date in get_preceding_30_days(start_date):
+    parameters['date_range'] = [start_date]
+
+    [model, _, _, _] = run(parameters)
+
+    daily_profits.append(model.objVal)
+
+print(daily_profits)
 
 time.sleep(5)
 
