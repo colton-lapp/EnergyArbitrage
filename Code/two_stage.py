@@ -56,6 +56,7 @@ model, decision_var_dict, model_results, constraint_params = run(parameters)
 # plot_result_time_series(model, decision_var_dict, model_results, constraint_params)
 
 parameters['battery_counts'] = decision_var_dict['battery_counts']
+parameters['warehouses_used'] = 'set'
 parameters['date_range'] = [start_date.strftime("%Y%m%d")]
 
 run(parameters, print_results=True)

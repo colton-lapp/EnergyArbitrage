@@ -49,7 +49,7 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
 
     prices = prices_dict['prices']
 
-    prices = prices[0:150]
+    # prices = prices[0:150]
 
     model = gp.Model(name)
 
@@ -65,7 +65,7 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
         decision_var_dict['battery_counts'] = {}
 
     for battery_type in battery_types_used:
-        for key in [f'{battery_type}-buy', f'{battery_type}-sell']:
+        for key in [f'{battery_type}_buy', f'{battery_type}_sell']:
             decision_var_dict[key] = model.addVars(num_periods, vtype=GRB.CONTINUOUS, name=key, lb=0) # num_markets, 
 
     objs = []
@@ -74,8 +74,8 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
     for battery_type in battery_types_used:
         battery = battery_types[battery_type]
 
-        buy = decision_var_dict[f'{battery_type}-buy']
-        sell = decision_var_dict[f'{battery_type}-sell']
+        buy = decision_var_dict[f'{battery_type}_buy']
+        sell = decision_var_dict[f'{battery_type}_sell']
         capacity = battery['capacity']
         charge_loss = battery['charge_loss']
         max_charge = battery['max_charge']
@@ -116,7 +116,7 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
             name="Area_constraint"
         )
 
-    objs = objs + [warehouse_data[i]['cost'] * warehouses_used[i] * -1 for i, warehouse in enumerate(warehouse_data)]
+        objs = objs + [warehouse_data[i]['cost'] * warehouses_used[i] * -1 for i, warehouse in enumerate(warehouse_data)]
 
     model.update()
 
@@ -161,8 +161,8 @@ def run(parameters, print_results=False):
                 print(f"\nPeriod {p + 1}:")
 
             for battery_type in battery_types_used:
-                buy = decision_var_dict[f'{battery_type}-buy']
-                sell = decision_var_dict[f'{battery_type}-sell']
+                buy = decision_var_dict[f'{battery_type}_buy']
+                sell = decision_var_dict[f'{battery_type}_sell']
 
                 if print_results:
                     print(f"\nFor Battery Type: {battery_type}:")
