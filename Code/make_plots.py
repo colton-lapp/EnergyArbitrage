@@ -8,7 +8,6 @@ import plotly.graph_objects as go
 from matplotlib.dates import DateFormatter
 
 def plot_price_time_series(d_date, generator, save_plot = True, aggregation = None):
-
     # if d_date is a list of two dates, this is extended time series
 
     if type(d_date) == list and len(d_date) == 2:

@@ -50,8 +50,6 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
 
     prices = prices_dict['prices']
 
-    print(prices[3] == prices[4])
-
     model = gp.Model(name)
 
     num_periods = len(prices)
