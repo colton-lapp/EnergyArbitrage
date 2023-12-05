@@ -2,6 +2,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from web_scrape_price_data import download_price_data, extract_time_series_prices
 from datetime import datetime
+import numpy as np
+
+from matplotlib.dates import DateFormatter
 
 def plot_price_time_series(d_date, generator, save_plot = True, aggregation = None):
 
@@ -53,7 +56,44 @@ def plot_price_time_series(d_date, generator, save_plot = True, aggregation = No
     return None
 
 def plot_result_time_series(model, decision_var_dict, model_results, constraint_params):
-    constraint_params['dates']  = [datetime.strptime(date, '%m/%d/%Y %H:%M') for date in constraint_params['price_times']]
+
+
+    # Extract data from the dictionary
+    buy_ts = model_results['buy_ts']
+    sell_ts = model_results['sell_ts']
+    prices = constraint_params['prices']
+    dates = [datetime.strptime(date, '%m/%d/%Y %H:%M').strftime('%m/%d') for date in constraint_params['price_times']]
+
+    battery_types = set(buy_ts.keys()).union(set(sell_ts.keys()))
+
+    # Create a new time series 'flow_ts' for each battery
+    flow_ts = {battery: np.array(buy_ts.get(battery, [0, 0, 0, 0])) - np.array(sell_ts.get(battery, [0, 0, 0, 0]))
+            for battery in battery_types}
+
+    # Plot the bar chart for 'flow_ts'
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    width = 0.4
+    ind = np.arange(len(dates))
+
+    for i, (battery, flow) in enumerate(flow_ts.items()):
+        ax1.bar(ind + i * width, flow, width, label=f'{battery} Buy/Sell')
+
+    ax1.set_xlabel('Date')
+    ax1.set_ylabel('Buy/Sell Flow')
+    date_freq = 75
+    ax1.set_xticks(ind[::date_freq])  # Show every couple of days
+    ax1.set_xticklabels(dates[::date_freq])
+    ax1.legend(loc='upper left')
+
+    # Create a second y-axis for 'prices'
+    ax2 = ax1.twinx()
+    ax2.plot(ind, prices, color='red', label='Prices')
+    ax2.set_ylabel('Prices', color='red')
+    ax2.tick_params('y', colors='red')
+    ax2.legend(loc='upper right')
+
+    plt.title('Battery Buying/Selling and Prices Over Time')
+    plt.show()
 
     # ---- PLOT TIME SERIES ON ONE GRAPH ---- #
 
@@ -82,6 +122,7 @@ def plot_result_time_series(model, decision_var_dict, model_results, constraint_
     """
 
 
+""" 
     # ---- PLOT TIME SERIES ON TWO GRAPHS ---- #
     # Extract unique battery names
     all_batteries = set(model_results['buy_ts'].keys()).union(model_results['sell_ts'].keys())
@@ -122,4 +163,4 @@ def plot_result_time_series(model, decision_var_dict, model_results, constraint_
 
     # Adjust layout
     plt.tight_layout()
-    plt.show()
+    plt.show() """

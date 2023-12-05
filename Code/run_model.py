@@ -49,7 +49,7 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
 
     prices = prices_dict['prices']
 
-    prices = prices[0:150]
+    #prices = prices[0:150]
 
     model = gp.Model(name)
 

@@ -2,8 +2,8 @@ from run_model import run
 from make_plots import plot_result_time_series
 from web_scrape_price_data import get_preceding_30_days
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
-from matplotlib.dates import DateFormatter
+import time
+
 
 parameters = {
     'name': 'ElectricityArbitrage',
@@ -37,11 +37,11 @@ parameters = {
     'battery_types_used': ['lithium', 'lead', 'palladium'],
     'battery_counts': None,
     'warehouse_data': [
-        {'area': 100, 'cost': 10},
-        {'area': 100, 'cost': 20},
-        {'area': 100, 'cost': 50},
-        {'area': 100, 'cost': 200},
-        {'area': 100, 'cost': 5000}
+        {'area': 100, 'cost': 500},
+        {'area': 100, 'cost': 10000},
+        {'area': 100, 'cost': 20000},
+        {'area': 100, 'cost': 50000},
+        {'area': 100, 'cost': 100000}
     ],
     'warehouses_used': None
 }
@@ -58,4 +58,11 @@ model, decision_var_dict, model_results, constraint_params = run(parameters, pri
 
 # print(decision_var_dict)
 print(decision_var_dict['battery_counts'])
-print(decision_var_dict['warehouses_used'])
+
+for w in range(len( decision_var_dict['warehouses_used'] ) ):
+    print( f"Buy Warehouse {w}? - {decision_var_dict['warehouses_used'][w].x }" )
+
+time.sleep(5)
+
+# Plot DVs
+plot_result_time_series(model, decision_var_dict, model_results, constraint_params)
