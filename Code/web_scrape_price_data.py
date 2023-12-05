@@ -141,8 +141,8 @@ def download_price_data(date_range, generator_name):
         # csv_files = [file for file in os.listdir(storage_directory) if file.endswith('.csv')]
 
         driver.quit()
-    
-        for date in date_range: 
+
+        for date in date_range:
 
             file_path = f'{storage_directory}/{date}_{generator_name}.csv'
 

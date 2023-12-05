@@ -49,7 +49,7 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
 
     prices = prices_dict['prices']
 
-    #prices = prices[0:150]
+    prices = prices[0:150]
 
     model = gp.Model(name)
 
@@ -84,7 +84,7 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
 
         if battery_counts is None:
             num_batteries = model.addVar(vtype=GRB.INTEGER, name=f'Number of {battery_type} batteries', lb=0)
-            decision_var_dict['battery_counts'][f'{battery_type}_num'] = num_batteries
+            decision_var_dict['battery_counts'][battery_type] = num_batteries
         else:
             num_batteries = battery_counts[battery_type]
 
@@ -183,14 +183,6 @@ def run(parameters, print_results=False):
         print("No solution found")
 
     if parameters['battery_counts'] is None:
-        for key, battery_count in decision_var_dict['battery_counts'].items():
-            decision_var_dict['battery_counts'][key] = battery_count.x
-
-    # if parameters['warehouses_used'] is None:
-    # for constr in model.getConstrs():
-    #     print(f"Constraint {constr.ConstrName}:", end=" ")
-    #     # print(constr.getAttr("LHS"))
-    #     print(constr.getAttr("RHS"))
-
+        decision_var_dict['battery_counts'] = {key: battery_count.x for key, battery_count in decision_var_dict['battery_counts'].items()}
 
     return [model, decision_var_dict, model_results, constraint_params]

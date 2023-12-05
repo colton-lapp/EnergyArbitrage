@@ -9,7 +9,6 @@ parameters = {
     'name': 'ElectricityArbitrage',
     'generator_name': 'ADK HUDSON___FALLS',
     'date_range': None,
-    'num_periods': 24,
     'num_markets': 1,
     'battery_types': {
         'lithium': {
@@ -47,22 +46,21 @@ parameters = {
 }
 
 # Get warehouse and battery numbers
-start_date = datetime.today()
+start_date = datetime.today() - timedelta(days=1)
 date_range = get_preceding_30_days(start_date)
 
 parameters['date_range'] = date_range
 
-model, decision_var_dict, model_results, constraint_params = run(parameters, print_results=True)
+model, decision_var_dict, model_results, constraint_params = run(parameters)
 
 # plot_result_time_series(model, decision_var_dict, model_results, constraint_params)
 
-# print(decision_var_dict)
-print(decision_var_dict['battery_counts'])
+parameters['battery_counts'] = decision_var_dict['battery_counts']
+parameters['date_range'] = [start_date.strftime("%Y%m%d")]
 
-for w in range(len( decision_var_dict['warehouses_used'] ) ):
-    print( f"Buy Warehouse {w}? - {decision_var_dict['warehouses_used'][w].x }" )
+run(parameters, print_results=True)
 
 time.sleep(5)
 
 # Plot DVs
-plot_result_time_series(model, decision_var_dict, model_results, constraint_params)
+# plot_result_time_series(model, decision_var_dict, model_results, constraint_params)
