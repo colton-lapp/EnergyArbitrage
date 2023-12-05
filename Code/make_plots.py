@@ -3,6 +3,7 @@ import pandas as pd
 from web_scrape_price_data import download_price_data, extract_time_series_prices
 from datetime import datetime
 import numpy as np
+import plotly.graph_objects as go
 
 from matplotlib.dates import DateFormatter
 
@@ -164,3 +165,60 @@ def plot_result_time_series(model, decision_var_dict, model_results, constraint_
     # Adjust layout
     plt.tight_layout()
     plt.show() """
+
+def plot_waterfall_chart( parameters, daily_profits ):
+
+    descriptions = []
+    values = []
+
+    # Get warehosue cost
+    descriptions.append('Warehouse Cost')
+
+    if 'warehouse_cost' not in parameters:
+        num_warehouses = 3 #FIX LATER
+        warehouse_cost = 0
+        for w in range(num_warehouses):
+            warehouse_cost += parameters['warehouse_data'][w]['cost']
+        values.append( -1*warehouse_cost )
+    else:
+        values.append( -1*warehouse_cost )
+
+
+    # Get battery costs
+    for b in parameters["battery_counts"].keys() :
+        descriptions.append(f'Battery Rental {b}')
+        values.append( -1*parameters['battery_counts'][b]*parameters['battery_types'][b]['cost'] )
+    
+    # Get revenues
+    n_days = len(daily_profits)
+    for d in range(n_days):
+        descriptions.append(f'Revenue {d}')
+        values.append( daily_profits[d] )
+
+     # Create waterfall plot
+    fig = go.Figure(go.Waterfall(
+        x=descriptions,
+        y=[ round(v, 2) for v in values ],
+        #measure=['relative'] + ['total'] * (len(descriptions) - 2) + ['relative'],
+        textposition='outside',
+        text=[f'${val:,.2f}' for val in values],
+        connector={'line': {'color': 'rgb(63, 63, 63)'}},
+    ))
+
+    fig.add_shape(
+        go.layout.Shape(
+            type='line',
+            x0=descriptions[0], x1=descriptions[-1],
+            y0=0, y1=0,
+                line=dict(color='black', width=3)
+            )
+        )
+
+    # Customize the plot
+    fig.update_layout(
+        title='Waterfall Plot - Profit Over Time - 1 Month',
+        xaxis_title='Costs/Revenues',
+        yaxis_title='Cumulative Profit ($)',
+    )
+
+    fig.show()

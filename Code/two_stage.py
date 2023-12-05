@@ -1,8 +1,9 @@
 from run_model import run
-from make_plots import plot_result_time_series
+from make_plots import plot_result_time_series, plot_waterfall_chart
 from web_scrape_price_data import get_preceding_30_days
 from datetime import datetime, timedelta
 import time
+import plotly.graph_objects as go
 
 
 parameters = {
@@ -16,21 +17,24 @@ parameters = {
             'capacity': 100,
             'charge_loss': 1,
             'max_charge': 50,
-            'max_discharge': 100
+            'max_discharge': 100,
+            'cost' : 2000
         },
         'lead': {
             'size': 0.8,
             'capacity': 200,
             'charge_loss': 0.90,
             'max_charge': 25,
-            'max_discharge': 50
+            'max_discharge': 50,
+            'cost' : 1000
         },
         'palladium': {
             'size': 2,
             'capacity': 50,
             'charge_loss': 0.85,
             'max_charge': 100,
-            'max_discharge': 100
+            'max_discharge': 100,
+            'cost' : 1500
         }
     },
     'battery_types_used': ['lithium', 'lead', 'palladium'],
@@ -75,3 +79,6 @@ time.sleep(5)
 
 # Plot DVs
 # plot_result_time_series(model, decision_var_dict, model_results, constraint_params)
+
+# Plot waterfall profits
+plot_waterfall_chart( parameters, daily_profits )
