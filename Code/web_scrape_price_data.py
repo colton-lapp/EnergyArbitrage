@@ -20,9 +20,16 @@ new_columns = {
     'Marginal Cost Congestion ($/MWHr)': 'MargCostCongestion'
 }
 
-home_dir = os.path.expanduser("~")
-download_directory = os.path.join(home_dir, 'Downloads_CSV')
-storage_directory = 'Data'
+#if download_directory is None:
+#    home_dir = os.path.expanduser("~")
+#    home_dir = os.getcwd()
+#    download_directory = os.path.join(home_dir, 'Downloads_CSV')
+#    storage_directory = os.path.join(home_dir, 'Data') 
+
+print("storage_directory: ", storage_directory)
+print("download_directory: ", download_directory)
+print("home_dir: ", home_dir)
+
 
 def extract_date(file_path):
     match = re.match(r'^(\d+)', file_path.split('/')[4])
@@ -124,25 +131,31 @@ def download_price_data(date_range, generator_name):
 
                 # Check if the request was successful (status code 200)
                 if response.status_code == 200:
-                    # Save the zip file to the destination folder
+                   
+                   try:
+                        # Save the zip file to the destination folder
+                        print("Trying to download zip file...")
+                        with open(os.path.join(storage_directory, "month.zip"), "wb") as zip_file:
+                            zip_file.write(response.content)
+                            print('successfully downloaded zip file')
 
-                    #with open(os.path.join(download_directory, "month.zip"), "wb") as zip_file:
-                    with open(os.path.join(storage_directory, "month.zip"), "wb") as zip_file:
-                        zip_file.write(response.content)
+                        # Extract the downloaded zip file
+                        print("Trying to extract zip file...")
+                        with zipfile.ZipFile(os.path.join(storage_directory, "month.zip"), 'r') as zip_ref:
+                            zip_ref.extractall(storage_directory)
+                            print('successfully extracted zip file')
 
-                    # Extract the downloaded zip file
-                    #with zipfile.ZipFile(os.path.join(download_directory, "month.zip"), 'r') as zip_ref:
-                    with zipfile.ZipFile(os.path.join(storage_directory, "month.zip"), 'r') as zip_ref:
-                       #zip_ref.extractall(download_directory)
-                        zip_ref.extractall(storage_directory)
+                        # Remove the downloaded zip file
+                        os.remove(os.path.join(storage_directory, "month.zip"))
+                        print('successfully removed zip file')
+                        
+                    except:
+                        print("Failed to extract the zip file - please try again")
+                        sys.exit(1)
 
-                    # Remove the downloaded zip file
-                    #os.remove(os.path.join(download_directory, "month.zip"))
-                    os.remove(os.path.join(storage_directory, "month.zip"))
                 else:
                     print("Failed to download the zip file")
 
-        # csv_files = [file for file in os.listdir(storage_directory) if file.endswith('.csv')]
 
         driver.quit()
 
