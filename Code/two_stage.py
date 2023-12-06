@@ -13,38 +13,38 @@ parameters = {
     'num_markets': 1,
     'battery_types': {
         'lithium': {
-            'size': 1,
-            'capacity': 100,
-            'charge_loss': 0.95,
-            'max_charge': 50,
-            'max_discharge': 50,
-            'cost': 200
+            'size': 18,
+            'capacity': 150,
+            'charge_loss': 0.96,
+            'max_charge': 120,
+            'max_discharge': 20,
+            'cost': 2500
         },
         'lead': {
-            'size': 0.8,
-            'capacity': 200,
-            'charge_loss': 0.90,
-            'max_charge': 25,
-            'max_discharge': 25,
-            'cost': 100
+            'size': 14,
+            'capacity': 350,
+            'charge_loss': 0.88,
+            'max_charge': 5,
+            'max_discharge': 50,
+            'cost': 500
         },
         'palladium': {
-            'size': 3,
-            'capacity': 50,
-            'charge_loss': 0.85,
+            'size': 8,
+            'capacity': 100,
+            'charge_loss': 0.5,
             'max_charge': 100,
             'max_discharge': 100,
-            'cost': 150
+            'cost': 4500
         }
     },
     'battery_types_used': ['lithium', 'lead', 'palladium'],
     'battery_counts': None,
     'warehouse_data': [
-        {'area': 100, 'cost': 5000},
-        {'area': 100, 'cost': 10000},
-        {'area': 100, 'cost': 20000},
         {'area': 100, 'cost': 50000},
-        {'area': 100, 'cost': 100000}
+        {'area': 100, 'cost': 100000},
+        {'area': 100, 'cost': 200000},
+        {'area': 100, 'cost': 500000},
+        {'area': 100, 'cost': 1000000}
     ],
     'warehouses_used': None,
     'carry_over': False
@@ -78,16 +78,15 @@ start_date = datetime.today() - timedelta(days=31)
 
 model, decision_var_dict, model_results, constraint_params = stage_one(start_date, parameters)
 
-# plot_result_time_series(model, decision_var_dict, model_results, constraint_params)
-
 daily_profits = stage_two(start_date, parameters, decision_var_dict)
 
 print(daily_profits)
+print(decision_var_dict['battery_counts'])
 
 time.sleep(5)
 
 # Plot DVs
 # plot_result_time_series(model, decision_var_dict, model_results, constraint_params)
 
-# Plot waterfall profits
-plot_waterfall_chart( parameters, daily_profits )
+# # Plot waterfall profits
+# plot_waterfall_chart(parameters, daily_profits)

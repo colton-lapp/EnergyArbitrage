@@ -65,7 +65,7 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
 
     for battery_type in battery_types_used:
         for key in [f'{battery_type}_buy', f'{battery_type}_sell']:
-            decision_var_dict[key] = model.addVars(num_periods, vtype=GRB.CONTINUOUS, name=key, lb=0) # num_markets, 
+            decision_var_dict[key] = model.addVars(num_periods, vtype=GRB.CONTINUOUS, name=key, lb=0)
 
     objs = []
     total_area_needed = 0
@@ -98,8 +98,8 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
 
             model.addConstr(current_level <= capacity * battery_count, f'CapacityConstraint_period_{p+1}')
             model.addConstr(current_level >= 0, f'SupplyConstraint_period_{p+1}')
-            model.addConstr(buy[p] * charge_loss <= max_charge, f'ChargeConstraint_period_{p+1}')
-            model.addConstr(sell[p] <= max_discharge, f'DischargeConstraint_period_{p+1}')
+            model.addConstr(buy[p] * charge_loss <= max_charge * battery_count, f'ChargeConstraint_period_{p+1}')
+            model.addConstr(sell[p] <= max_discharge * battery_count, f'DischargeConstraint_period_{p+1}')
 
         model.update()
 
