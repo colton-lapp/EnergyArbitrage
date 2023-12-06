@@ -13,36 +13,36 @@ parameters = {
     'num_markets': 1,
     'battery_types': {
         'lithium': {
-            'size': 18,
-            'capacity': 150,
-            'charge_loss': 0.96,
-            'max_charge': 120,
-            'max_discharge': 10,
-            'cost': 25000
+            'size': 22.1,
+            'capacity': 100,
+            'charge_loss': 0.75,
+            'max_charge': 40,
+            'max_discharge': 15,
+            'cost': 12500
         },
         'lead': {
-            'size': 14,
+            'size': 20.3,
             'capacity': 350,
-            'charge_loss': 0.88,
-            'max_charge': 5,
-            'max_discharge': 45,
-            'cost': 15000
+            'charge_loss': 0.68,
+            'max_charge': 10,
+            'max_discharge': 40,
+            'cost': 11000
         },
         'palladium': {
-            'size': 4,
-            'capacity': 100,
-            'charge_loss': 0.55,
-            'max_charge': 100,
-            'max_discharge': 100,
-            'cost': 45000
+            'size': .1,
+            'capacity': 5,
+            'charge_loss': 0.33,
+            'max_charge': 5,
+            'max_discharge': 5,
+            'cost': 50
         }
     },
     'battery_types_used': ['lithium', 'lead', 'palladium'],
     'battery_counts': None,
     'warehouse_data': [
+        {'area': 100, 'cost': 30000},
         {'area': 100, 'cost': 50000},
-        {'area': 100, 'cost': 70000},
-        {'area': 100, 'cost': 150000},
+        {'area': 100, 'cost': 100000},
         {'area': 100, 'cost': 300000},
         {'area': 100, 'cost': 8000000}
     ],
@@ -83,10 +83,12 @@ daily_profits = stage_two(start_date, parameters, decision_var_dict)
 print(daily_profits)
 print(decision_var_dict['battery_counts'])
 
-time.sleep(5)
+time.sleep(1)
 
 # Plot DVs
-# plot_result_time_series(model, decision_var_dict, model_results, constraint_params)
+plot_result_time_series(model, decision_var_dict, model_results, constraint_params)
+
+time.sleep(1)
 
 # # Plot waterfall profits
 plot_waterfall_chart(parameters, daily_profits)
