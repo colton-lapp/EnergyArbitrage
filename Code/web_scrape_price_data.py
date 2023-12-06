@@ -21,10 +21,10 @@ new_columns = {
 }
 
 #if download_directory is None:
-#    home_dir = os.path.expanduser("~")
-#    home_dir = os.getcwd()
-#    download_directory = os.path.join(home_dir, 'Downloads_CSV')
-#    storage_directory = os.path.join(home_dir, 'Data') 
+home_dir = os.path.expanduser("~")
+home_dir = os.getcwd()
+download_directory = os.path.join(home_dir, 'Downloads_CSV')
+storage_directory = os.path.join(home_dir, 'Data') 
 
 print("storage_directory: ", storage_directory)
 print("download_directory: ", download_directory)
@@ -132,7 +132,7 @@ def download_price_data(date_range, generator_name):
                 # Check if the request was successful (status code 200)
                 if response.status_code == 200:
                    
-                   try:
+                    try:
                         # Save the zip file to the destination folder
                         print("Trying to download zip file...")
                         with open(os.path.join(storage_directory, "month.zip"), "wb") as zip_file:
@@ -148,7 +148,7 @@ def download_price_data(date_range, generator_name):
                         # Remove the downloaded zip file
                         os.remove(os.path.join(storage_directory, "month.zip"))
                         print('successfully removed zip file')
-                        
+
                     except:
                         print("Failed to extract the zip file - please try again")
                         sys.exit(1)

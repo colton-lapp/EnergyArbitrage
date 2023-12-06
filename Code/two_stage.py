@@ -17,34 +17,34 @@ parameters = {
             'capacity': 150,
             'charge_loss': 0.96,
             'max_charge': 120,
-            'max_discharge': 20,
-            'cost': 2500
+            'max_discharge': 10,
+            'cost': 25000
         },
         'lead': {
             'size': 14,
             'capacity': 350,
             'charge_loss': 0.88,
             'max_charge': 5,
-            'max_discharge': 50,
-            'cost': 500
+            'max_discharge': 45,
+            'cost': 15000
         },
         'palladium': {
-            'size': 8,
+            'size': 4,
             'capacity': 100,
-            'charge_loss': 0.5,
+            'charge_loss': 0.55,
             'max_charge': 100,
             'max_discharge': 100,
-            'cost': 4500
+            'cost': 45000
         }
     },
     'battery_types_used': ['lithium', 'lead', 'palladium'],
     'battery_counts': None,
     'warehouse_data': [
         {'area': 100, 'cost': 50000},
-        {'area': 100, 'cost': 100000},
-        {'area': 100, 'cost': 200000},
-        {'area': 100, 'cost': 500000},
-        {'area': 100, 'cost': 1000000}
+        {'area': 100, 'cost': 70000},
+        {'area': 100, 'cost': 150000},
+        {'area': 100, 'cost': 300000},
+        {'area': 100, 'cost': 8000000}
     ],
     'warehouses_used': None,
     'carry_over': False
@@ -89,4 +89,4 @@ time.sleep(5)
 # plot_result_time_series(model, decision_var_dict, model_results, constraint_params)
 
 # # Plot waterfall profits
-# plot_waterfall_chart(parameters, daily_profits)
+plot_waterfall_chart(parameters, daily_profits)
