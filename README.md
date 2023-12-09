@@ -4,11 +4,9 @@ Optimizing the arbitrage opportunities of power cost differences with a battery 
 
 ## Team Members: Colton Lapp, Justin Poser, Ryan Shen
 
-# 1. Background:
+To run the webdriver, please ensure that all the python modules have been installed and that you've installed a Selenium webdriver, which is stored in your machine's default package folder.
 
-Real time temporal arbitrage is seen as a key source of revenue for battery storage systems. With real time temporal arbitrage, charging happens at periods where electricity prices are cheapest, and energy is discharged from batteries to the grid during peak demand periods, where electricity fetches high prices. The New York Independent Service Operator (NYISO) operates the state’s wholesale power market, including power markets, contracts that control transmission, and related products. Every day, the New York ISO issues a 24 hour forecast of energy prices at 11 AM.
+From there, you'll need to activate your webdriver. Below is a stackoverflow post with instructions for the Chromedriver we use for our project.
+https://stackoverflow.com/questions/13724778/how-to-run-selenium-webdriver-test-cases-in-chrome.
 
-For the purposes of our project, we’ll assume (for now) that our energy storage system utilizes lithium ion batteries, which, at the moment, have the highest round-trip efficiency (how much energy is retained when electricity transfers from the grid to the battery and vice versa). The choice of battery will decide our capacity constraints. We’ll also focus on generators in N.Y.C and expand to more zones depending on computational bandwidth.
-
-# 2. Mathematical Formulation 
-See attached project proposal
+We recommend that you run our project through two_stage.py, which calls on the other modules contained within this repo.
