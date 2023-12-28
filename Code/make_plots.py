@@ -1,15 +1,13 @@
-import matplotlib.pyplot as plt
-import pandas as pd
-from web_scrape_price_data import download_price_data, extract_time_series_prices
-from datetime import datetime
 import numpy as np
+import pandas as pd
+from datetime import datetime
+
+from web_scrape_price_data import download_price_data, extract_time_series_prices
+
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 
-from matplotlib.dates import DateFormatter
-
-def plot_price_time_series(d_date, generator, save_plot = True, aggregation = None):
-    # if d_date is a list of two dates, this is extended time series
-
+def plot_price_time_series(d_date, generator, save_plot=True, aggregation=None):
     if type(d_date) == list and len(d_date) == 2:
         plot_type = 'extended'
 
@@ -56,8 +54,6 @@ def plot_price_time_series(d_date, generator, save_plot = True, aggregation = No
     return None
 
 def plot_result_time_series(model, decision_var_dict, model_results, constraint_params):
-
-
     # Extract data from the dictionary
     buy_ts = model_results['buy_ts']
     sell_ts = model_results['sell_ts']
@@ -122,7 +118,7 @@ def plot_result_time_series(model, decision_var_dict, model_results, constraint_
     """
 
 
-""" 
+"""
     # ---- PLOT TIME SERIES ON TWO GRAPHS ---- #
     # Extract unique battery names
     all_batteries = set(model_results['buy_ts'].keys()).union(model_results['sell_ts'].keys())
@@ -165,29 +161,24 @@ def plot_result_time_series(model, decision_var_dict, model_results, constraint_
     plt.tight_layout()
     plt.show() """
 
-def plot_waterfall_chart( parameters, daily_profits ):
-
+def plot_waterfall_chart(parameters, decision_var_dict, daily_profits):
     descriptions = []
     values = []
 
     # Get warehosue cost
     descriptions.append('Warehouse Cost')
 
-    if 'warehouse_cost' not in parameters:
-        num_warehouses = 3 #FIX LATER
-        warehouse_cost = 0
-        for w in range(num_warehouses):
-            warehouse_cost += parameters['warehouse_data'][w]['cost']
-        values.append( -1*warehouse_cost )
-    else:
-        values.append( -1*warehouse_cost )
+    num_warehouses = sum(1 for var in decision_var_dict['warehouses_used'].values() if var.x == 1.0)
 
+    for i in range(num_warehouses):
+        warehouse_cost = parameters['warehouse_data'][i]['cost']
+        values.append(-1*warehouse_cost)
 
     # Get battery costs
     for b in parameters["battery_counts"].keys() :
         descriptions.append(f'Battery Rental {b}')
-        values.append( -1*parameters['battery_counts'][b]*parameters['battery_types'][b]['cost'] )
-    
+        values.append( -1*parameters['battery_counts'][b]*parameters['battery_types'][b]['cost'])
+
     # Get revenues
     n_days = len(daily_profits)
     for d in range(n_days):
@@ -198,7 +189,6 @@ def plot_waterfall_chart( parameters, daily_profits ):
     fig = go.Figure(go.Waterfall(
         x=descriptions,
         y=[ round(v, 2) for v in values ],
-        #measure=['relative'] + ['total'] * (len(descriptions) - 2) + ['relative'],
         textposition='outside',
         text=[f'${val:,.2f}' for val in values],
         connector={'line': {'color': 'rgb(63, 63, 63)'}},
