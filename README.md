@@ -33,3 +33,29 @@ From there, you'll need to activate your webdriver. Below is a stackoverflow pos
 https://stackoverflow.com/questions/13724778/how-to-run-selenium-webdriver-test-cases-in-chrome.
 
 
+
+### Highlights from Project:
+
+Objective Function Formulation
+
+![alt text](https://github.com/colton-lapp/EnergyArbitrage/blob/main/img/objfunc_stage1.png?raw=true)
+
+Contraints
+
+
+![alt text](https://github.com/colton-lapp/EnergyArbitrage/blob/main/img/constraints.png?raw=true)
+
+Parameterization
+
+![alt text](https://github.com/colton-lapp/EnergyArbitrage/blob/main/img/parameterization.png?raw=true)
+
+**Results**
+
+Decision Variables: Buy/Sell by type
+
+![alt text](https://github.com/colton-lapp/EnergyArbitrage/blob/main/img/results_buysell.png?raw=true)
+
+
+Profits over next month
+
+![alt text](https://github.com/colton-lapp/EnergyArbitrage/blob/main/img/results_profits.png?raw=true)
