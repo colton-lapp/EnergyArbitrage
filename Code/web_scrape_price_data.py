@@ -5,14 +5,13 @@ import time
 import shutil
 import zipfile
 import requests
-import numpy as np
 import pandas as pd
-import gurobipy as gp
 from selenium import webdriver
 from datetime import datetime, timedelta
 from webdriver_manager.chrome import ChromeDriverManager
 
 columns = ['Time Stamp', 'LBMP ($/MWHr)', 'Marginal Cost Losses ($/MWHr)', 'Marginal Cost Congestion ($/MWHr)']
+
 new_columns = {
     'Time Stamp': 'time',
     'LBMP ($/MWHr)': 'LB_MargPrice',
@@ -24,12 +23,11 @@ new_columns = {
 home_dir = os.path.expanduser("~")
 home_dir = os.getcwd()
 download_directory = os.path.join(home_dir, 'Downloads_CSV')
-storage_directory = os.path.join(home_dir, 'Data') 
+storage_directory = os.path.join(home_dir, 'Data')
 
 print("storage_directory: ", storage_directory)
 print("download_directory: ", download_directory)
 print("home_dir: ", home_dir)
-
 
 def extract_date(file_path):
     match = re.match(r'^(\d+)', file_path.split('/')[4])
@@ -129,9 +127,8 @@ def download_price_data(date_range, generator_name):
                 zip_url = f'http://mis.nyiso.com/public/csv/damlbmp/{year_month}01damlbmp_gen_csv.zip'
                 response = requests.get(zip_url, timeout=10)
 
-                # Check if the request was successful (status code 200)
+                # Check if the request was successful
                 if response.status_code == 200:
-                   
                     try:
                         # Save the zip file to the destination folder
                         print("Trying to download zip file...")
@@ -192,27 +189,6 @@ def extract_time_series_prices(date_range, generator, return_df=False, aggregati
 
     # Ensure that the prices are in order
     prices_df = prices_df.sort_values(by='time').reset_index(drop=True)
-
-    # Perform any temporal aggregations ?
-    # if aggregation == 'hourly':
-    #     # Convert the 'timestamp' column to datetime
-    #     prices_df['datetime'] = pd.to_datetime(prices_df['time'])
-
-    #     # Set the 'timestamp' column as the index
-    #     prices_df.set_index('datetime', inplace=True)
-
-    #     # Resample the DataFrame to hourly frequency and aggregate using the mean
-    #     hourly_marg_prices = prices_df[['LB_MargPrice']].resample('H').mean()
-    #     hourly_marg_cost_loss = prices_df[['MargCostLosses']].resample('H').mean()
-    #     hourly_marg_cost_cong = prices_df[['MargCostCongestion']].resample('H').mean()
-
-    #     #Concat
-    #     hourly_df = pd.concat([hourly_marg_prices, hourly_marg_cost_loss, hourly_marg_cost_cong], axis=1)
-
-    #     # Reset the index to include the timestamp as a column
-    #     hourly_df = hourly_df.reset_index()
-    #     hourly_df.rename(columns={'datetime': 'time'}, inplace=True)
-    #     prices_df = hourly_df
 
     if return_df:
         result = prices_df

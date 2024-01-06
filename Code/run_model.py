@@ -1,27 +1,17 @@
-import os
-import re
-import time
-import numpy as np
-import pandas as pd
 import gurobipy as gp
-import sys
 from gurobipy import GRB
-from datetime import datetime
-from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 
-from web_scrape_price_data import extract_date, download_price_data, extract_time_series_prices
-from make_plots import plot_price_time_series
+from web_scrape_price_data import download_price_data, extract_time_series_prices
 
 # Set parameters for the model
 
 # OPTIGUIDE DATA CODE GOES HERE
 
-def create_model(parameters): # num_markets is going to be 1 for the time being
+def create_model(parameters):
     name = parameters['name']
     generator_name = parameters['generator_name']
     date_range = parameters['date_range']
-    num_markets = parameters['num_markets'] # not really used as of now
     battery_types = parameters['battery_types']
     battery_types_used = parameters['battery_types_used']
     battery_counts = parameters['battery_counts']
@@ -32,17 +22,7 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
     # Container to fill with prices and dates to pass out of the function
     constraint_params = {}
 
-    # placeholder
-    if date_range is None:
-        start_date = datetime.today()
-        start_date = start_date.strftime("%Y%m%d")
-        date_range = [start_date]
-
-    # Download data
     download_price_data(date_range, generator_name)
-
-    # Plot prices time series
-    # plot_price_time_series(date_range, generator_name)
 
     # Extract time series of prices in a list for Gurobi
     prices_dict = extract_time_series_prices(date_range, generator_name, aggregation=None)
@@ -56,7 +36,6 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
     parameters['num_periods'] = num_periods
 
     periods = range(num_periods)
-    # markets = range(num_markets)
 
     decision_var_dict = {}
 
@@ -117,7 +96,7 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
             gp.quicksum(
                 warehouse_data[i]['area'] * warehouses_used[i] for i, warehouse in enumerate(warehouse_data)
             ) >= total_area_needed,
-            name="Area_constraint"
+            name='Area_constraint'
         )
 
         objs = objs + [warehouse_data[i]['cost'] * warehouses_used[i] * -1 for i, warehouse in enumerate(warehouse_data)]
@@ -128,6 +107,7 @@ def create_model(parameters): # num_markets is going to be 1 for the time being
         gp.quicksum(objs),
         GRB.MAXIMIZE
     )
+
     # OPTIGUIDE CONSTRAINT CODE GOES HERE
 
     constraint_params['price_times'] = price_times
@@ -151,7 +131,6 @@ def run(parameters, print_results=False):
         model_results = {}
 
         model_results['num_periods'] = parameters['num_periods']
-        # model_results['num_markets'] = parameters['num_markets']
         model_results['buy_ts'] = {battery_type: [] for battery_type in battery_types_used}
         model_results['sell_ts'] = {battery_type: [] for battery_type in battery_types_used}
         model_results['time'] = list(range(parameters['num_periods']))
@@ -171,7 +150,6 @@ def run(parameters, print_results=False):
                 if print_results:
                     print(f"\nFor Battery Type: {battery_type}:")
 
-                # for i in range(model_results['num_markets']):
                 if print_results:
                     print(f"Buy {buy[p].x}")
                     print(f"Sell {sell[p].x}")
