@@ -4,10 +4,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 from web_scrape_price_data import download_price_data, extract_time_series_prices
 
-# Set parameters for the model
-
 # OPTIGUIDE DATA CODE GOES HERE
 
+# Main function
 def create_model(parameters):
     name = parameters['name']
     generator_name = parameters['generator_name']
@@ -30,6 +29,7 @@ def create_model(parameters):
 
     prices = prices_dict['prices']
 
+    # Create the model
     model = gp.Model(name)
 
     num_periods = len(prices)
@@ -39,9 +39,11 @@ def create_model(parameters):
 
     decision_var_dict = {}
 
+    # Create storage of battery data if one wasn't passed in
     if battery_counts is None:
         decision_var_dict['battery_counts'] = {}
 
+    # Create the main decision vars - amount to buy and sell for each period
     for battery_type in battery_types_used:
         for key in [f'{battery_type}_buy', f'{battery_type}_sell']:
             decision_var_dict[key] = model.addVars(num_periods, vtype=GRB.CONTINUOUS, name=key, lb=0)
@@ -49,9 +51,11 @@ def create_model(parameters):
     objs = []
     total_area_needed = 0
 
+    # Create constraints
     for battery_type in battery_types_used:
         battery = battery_types[battery_type]
 
+        # Extract data about the batteries from the parameters
         buy = decision_var_dict[f'{battery_type}_buy']
         sell = decision_var_dict[f'{battery_type}_sell']
         capacity = battery['capacity']
@@ -61,6 +65,7 @@ def create_model(parameters):
         size = battery['size']
         cost = battery['cost']
 
+        # Create decison vars for the batteries if they weren't passed in
         if battery_counts is None:
             battery_count = model.addVar(vtype=GRB.INTEGER, name=f'Number of {battery_type} batteries', lb=0)
             decision_var_dict['battery_counts'][battery_type] = battery_count
@@ -69,23 +74,26 @@ def create_model(parameters):
         else:
             battery_count = battery_counts[battery_type]
 
+        # Main contraints
         for p in range(num_periods):
             current_level = gp.quicksum(charge_loss * buy[p_] - sell[p_] for p_ in range(p + 1))
 
             if not carry_over and p % 24 == 0:
                 model.addConstr(current_level <= 0, 'CarryOverConstraint')
 
-            model.addConstr(current_level <= capacity * battery_count, f'CapacityConstraint_period_{p+1}')
-            model.addConstr(current_level >= 0, f'SupplyConstraint_period_{p+1}')
-            model.addConstr(buy[p] * charge_loss <= max_charge * battery_count, f'ChargeConstraint_period_{p+1}')
-            model.addConstr(sell[p] <= max_discharge * battery_count, f'DischargeConstraint_period_{p+1}')
+            model.addConstr(current_level <= capacity * battery_count, f'CapacityConstraint_period_{p+1}') # Can't have more charge than max capacity
+            model.addConstr(current_level >= 0, f'SupplyConstraint_period_{p+1}') # Can't have a negative amount of charge
+            model.addConstr(buy[p] * charge_loss <= max_charge * battery_count, f'ChargeConstraint_period_{p+1}') # Can't charge more then the batteries can charge in one period
+            model.addConstr(sell[p] <= max_discharge * battery_count, f'DischargeConstraint_period_{p+1}') # Can't discharge more then the batteries can charge in one period
 
         model.update()
 
+        # Objective value summation
         objs = objs + [prices[p] * sell[p] - prices[p] * buy[p] for p in periods]
 
         total_area_needed += battery_count * size
 
+    # Create decision vars for warehouses if not passed in
     if warehouses_used is None:
         warehouses_used = model.addVars(len(warehouse_data), vtype=GRB.BINARY, name=f'Number of warehouses')
         decision_var_dict['warehouses_used'] = warehouses_used

@@ -1,16 +1,16 @@
 # EnergyArbitrage
-Optimizing the arbitrage opportunities of power cost differences with a battery network - DABP final project
+Optimizing the arbitrage opportunities of power cost differences with a battery network - final project for 94-867: Decision Analytics for Business and Policy
 
 
 #### Team Members: Colton Lapp, Justin Poser, Ryan Shen
 
 ## Overview:
-This repository contains the codebase and report for the final project for "Decision Analytics for Business and Policy - 94-867" Fall 2023. Our code webscrapes energy price data from the New York Independent Service Operator (ISO) and then optimizes buying/selling decisions to maximize profits. We formulate our problem as mixed integer programming problem with a complex array of constriants and then find the optimal solution using Gurobi/GurobiPy. We also enveloped our code within *Optiguide*, an experimental Natural Language Wrapper developed by Microsoft which utilizes OpenAI's LLMs to translate natural langauge into Gurobi code. Using Optiguide, we translate hypothetical natural langauge requests from our client into executable Python code and then report how the changes affect the optimal solution. 
+This repository contains the codebase and report for the final project for Decision Analytics for Business and Policy - 94-867 Fall 2023. Our code webscrapes energy price data from the New York Independent Service Operator (ISO), and then optimizes buying/selling decisions to maximize profits. We formulate our problem as a mixed integer programming problem with a complex array of constriants, and then find the optimal solution using Gurobi/GurobiPy. We also enveloped our code in *Optiguide*, an experimental Natural Language Wrapper developed by Microsoft which utilizes OpenAI's LLMs to translate natural langauge into Gurobi code. Using Optiguide, we translate hypothetical natural langauge requests from our client into executable Python code, and then report how the changes affect the optimal solution.
 
---- 
+---
 
 ### Read our final report:
-Contents: 
+Contents:
 
 - Executive Summary
 - Mathmematical Formulation
@@ -19,7 +19,7 @@ Contents:
 Located at: . . . . . **/FinalReport_EnergyArbitrage.pdf**
 
 ---
-### Run our code: 
+### Run our code:
 
 We recommend that you run our project through /Code/**example.py**, which calls on the other modules contained within this repo.
 
