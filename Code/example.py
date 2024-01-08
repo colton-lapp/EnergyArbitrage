@@ -6,6 +6,8 @@ from two_stage import stage_one, stage_two
 
 import plotly.graph_objects as go
 
+# Set parameters for the model
+
 parameters = {
     'name': 'ElectricityArbitrage',
     'generator_name': 'ADK HUDSON___FALLS',
